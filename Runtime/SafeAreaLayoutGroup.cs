@@ -76,7 +76,7 @@ namespace Gilzoide.SafeAreaLayout
                 return;
             }
 
-            Rect safeArea = SafeAreaUtility.GetSafeArea();
+            Rect safeArea = GetSafeArea();
             float leftMargin = LeftEdge ? Mathf.Max(0, safeArea.xMin - _screenRect.xMin) / horizontalSize : 0;
             float rightMargin = RightEdge ? Mathf.Max(0, _screenRect.xMax - safeArea.xMax) / horizontalSize : 0;
 
@@ -151,6 +151,11 @@ namespace Gilzoide.SafeAreaLayout
             }
             
             LayoutRebuilder.MarkLayoutForRebuild(SelfRectTransform);
+        }
+
+        protected virtual Rect GetSafeArea()
+        {
+            return SafeAreaUtility.GetSafeArea();
         }
 
         protected void RefreshScreenRect()
