@@ -99,7 +99,7 @@ namespace Gilzoide.SafeAreaLayout
                 return;
             }
 
-            Rect safeArea = SafeAreaUtility.GetSafeArea();
+            Rect safeArea = GetSafeArea();
             float bottomMargin = BottomEdge ? Mathf.Max(0, safeArea.yMin - _screenRect.yMin) / verticalSize : 0;
             float topMargin = TopEdge ? Mathf.Max(0, _screenRect.yMax - safeArea.yMax) / verticalSize : 0;
 
