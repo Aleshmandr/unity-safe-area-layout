@@ -4,7 +4,7 @@ using UnityEngine.UI;
 
 namespace Gilzoide.SafeAreaLayout.Editor
 {
-    [CustomEditor(typeof(SafeAreaLayoutGroup)), CanEditMultipleObjects]
+    [CustomEditor(typeof(SafeAreaLayoutGroup), true), CanEditMultipleObjects]
     public class SafeAreaLayoutGroupEditor : UnityEditor.Editor
     {
         private static readonly GUIContent _previewModeContent = new GUIContent
