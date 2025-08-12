@@ -5,6 +5,8 @@ using UnityEngine.UI;
 
 namespace Gilzoide.SafeAreaLayout
 {
+    public interface ICustomSafeAreaProvider{}
+    
     [RequireComponent(typeof(RectTransform)), ExecuteAlways]
     public class SafeAreaLayoutGroup : MonoBehaviour, ILayoutGroup
     {
@@ -17,7 +19,7 @@ namespace Gilzoide.SafeAreaLayout
         public const bool PreviewInEditor = false;
 #endif
 
-        private SafeAreaLayoutConfig OverrideGloblalLayoutConfig;
+        [SerializeField] private SafeAreaLayoutConfig _overrideGlobalLayoutConfig;
 
         public RectTransform SelfRectTransform => (RectTransform) transform;
 
@@ -30,7 +32,7 @@ namespace Gilzoide.SafeAreaLayout
 
         private void Awake()
         {
-            _layoutConfig = OverrideGloblalLayoutConfig == null ? SafeAreaLayoutProjectConfigProvider.Config : OverrideGloblalLayoutConfig; 
+            _layoutConfig = _overrideGlobalLayoutConfig == null ? SafeAreaLayoutProjectConfigProvider.Config : _overrideGlobalLayoutConfig; 
         }
 
         protected virtual void OnEnable()
