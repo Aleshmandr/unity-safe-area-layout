@@ -45,10 +45,11 @@ A sample scene is available at  [Samples~/SimpleSample](Samples~/SimpleSample).
 ## How to use
 1. Add the [SafeAreaLayoutGroup](Runtime/SafeAreaLayoutGroup.cs) script anywhere in your UI hierarchy, even objects with `Canvas` components are supported.
    Direct children will have their anchors driven while the script is enabled.
-2. (optional) Select the Safe Area edges that your layout group will respect.
-3. (optional) Make specific children be ignored by the layout group by adding the `IgnoreSafeArea` component to them.
+2. (optional) Configure global margins in Project Settings: go to `Edit → Project Settings → Safe Area Layout` and adjust Top/Bottom/Left/Right margin multipliers.
+3. (optional) Create a custom `SafeAreaLayoutConfig` asset and assign it to the `OverrideGloblalLayoutConfig` field on a specific `SafeAreaLayoutGroup` to override the global settings for that group.
+4. (optional) Make specific children be ignored by the layout group by adding the `IgnoreSafeArea` component to them.
    Alternatively, use `LayoutElement` components with the `Ignore Layout` flag marked as true.
-4. (optional) Use one of the Preview Modes while in editor to preview the adjustments.
+5. (optional) Use one of the Preview Modes while in editor to preview the adjustments.
    Preview is applied on Play Mode and while hovering the `Hover to Preview Layout` button in the `SafeAreaLayoutGroup`'s inspector.
-5. Play the game (play the game, everybody play the gaaaame)
-6. Enjoy 🍾
+6. Play the game
+7. Enjoy 🍾

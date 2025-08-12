@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
@@ -16,14 +17,7 @@ namespace Gilzoide.SafeAreaLayout
         public const bool PreviewInEditor = false;
 #endif
 
-        [Tooltip("Whether safe area's top edge will be respected")]
-        public bool TopEdge = true;
-        [Tooltip("Whether safe area's left edge will be respected")]
-        public bool LeftEdge = true;
-        [Tooltip("Whether safe area's right edge will be respected")]
-        public bool RightEdge = true;
-        [Tooltip("Whether safe area's bottom edge will be respected")]
-        public bool BottomEdge = true;
+        private SafeAreaLayoutConfig OverrideGloblalLayoutConfig;
 
         public RectTransform SelfRectTransform => (RectTransform) transform;
 
@@ -32,6 +26,12 @@ namespace Gilzoide.SafeAreaLayout
         protected readonly Vector3[] _worldCorners = new Vector3[4];
         protected Canvas _canvas;
         protected Rect _screenRect;
+        private SafeAreaLayoutConfig _layoutConfig;
+
+        private void Awake()
+        {
+            _layoutConfig = OverrideGloblalLayoutConfig == null ? SafeAreaLayoutProjectConfigProvider.Config : OverrideGloblalLayoutConfig; 
+        }
 
         protected virtual void OnEnable()
         {
@@ -77,8 +77,8 @@ namespace Gilzoide.SafeAreaLayout
             }
 
             Rect safeArea = GetSafeArea();
-            float leftMargin = LeftEdge ? Mathf.Max(0, safeArea.xMin - _screenRect.xMin) / horizontalSize : 0;
-            float rightMargin = RightEdge ? Mathf.Max(0, _screenRect.xMax - safeArea.xMax) / horizontalSize : 0;
+            float leftMargin = _layoutConfig.LeftMargin * Mathf.Max(0, safeArea.xMin - _screenRect.xMin) / horizontalSize;
+            float rightMargin = _layoutConfig.RightMargin * Mathf.Max(0, _screenRect.xMax - safeArea.xMax) / horizontalSize;
 
             foreach ((RectTransform child, Anchors anchors) in _childrenAnchors)
             {
@@ -100,8 +100,8 @@ namespace Gilzoide.SafeAreaLayout
             }
 
             Rect safeArea = GetSafeArea();
-            float bottomMargin = BottomEdge ? Mathf.Max(0, safeArea.yMin - _screenRect.yMin) / verticalSize : 0;
-            float topMargin = TopEdge ? Mathf.Max(0, _screenRect.yMax - safeArea.yMax) / verticalSize : 0;
+            float bottomMargin = _layoutConfig.BottomMargin * Mathf.Max(0, safeArea.yMin - _screenRect.yMin) / verticalSize;
+            float topMargin = _layoutConfig.TopMargin * Mathf.Max(0, _screenRect.yMax - safeArea.yMax) / verticalSize;
 
             foreach ((RectTransform child, _) in _childrenAnchors)
             {
