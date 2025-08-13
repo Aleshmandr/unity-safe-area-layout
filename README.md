@@ -1,5 +1,4 @@
 # Safe Area Layout
-[![openupm](https://img.shields.io/npm/v/com.gilzoide.safe-area-layout?label=openupm&registry_uri=https://package.openupm.com)](https://openupm.com/packages/com.gilzoide.safe-area-layout/)
 
 Unity GUI [layout group](https://docs.unity3d.com/Packages/com.unity.ugui@1.0/manual/UIAutoLayout.html#layout-groups)
 that makes children respect the [Safe Area](https://docs.unity3d.com/ScriptReference/Screen-safeArea.html).
@@ -22,17 +21,11 @@ It drives direct children's anchors while in Play Mode and supports [`LayoutElem
 
 
 ## Installing
-Either:
-
-- Install using [openupm](https://openupm.com/):
-  ```
-  openupm add com.gilzoide.safe-area-layout
-  ```
 
 - Install via [Unity Package Manager](https://docs.unity3d.com/Manual/upm-ui-giturl.html)
 using the following git URL:
   ```
-  https://github.com/gilzoide/unity-safe-area-layout.git#1.3.0
+  https://github.com/Aleshmandr/unity-safe-area-layout.git
   ```
 
 - Clone this repository directly to your `Packages` folder or anywhere inside your project's `Assets`.
