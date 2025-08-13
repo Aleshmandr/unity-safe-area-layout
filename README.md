@@ -32,7 +32,7 @@ Either:
 - Install via [Unity Package Manager](https://docs.unity3d.com/Manual/upm-ui-giturl.html)
 using the following git URL:
   ```
-  https://github.com/gilzoide/unity-safe-area-layout.git#1.1.2
+  https://github.com/gilzoide/unity-safe-area-layout.git#1.3.0
   ```
 
 - Clone this repository directly to your `Packages` folder or anywhere inside your project's `Assets`.
@@ -49,7 +49,9 @@ A sample scene is available at  [Samples~/SimpleSample](Samples~/SimpleSample).
 3. (optional) Create a custom `SafeAreaLayoutConfig` asset and assign it to the `OverrideGloblalLayoutConfig` field on a specific `SafeAreaLayoutGroup` to override the global settings for that group.
 4. (optional) Make specific children be ignored by the layout group by adding the `IgnoreSafeArea` component to them.
    Alternatively, use `LayoutElement` components with the `Ignore Layout` flag marked as true.
-5. (optional) Use one of the Preview Modes while in editor to preview the adjustments.
-   Preview is applied on Play Mode and while hovering the `Hover to Preview Layout` button in the `SafeAreaLayoutGroup`'s inspector.
-6. Play the game
-7. Enjoy 🍾
+5. (optional) Add additional margins via Margins Providers: assign one or more components implementing `MarginsProviderBase` to the `SafeAreaLayoutGroup`'s `Additional Margins` list to provide extra top/bottom/left/right spacing.
+    This is useful for reserving space for elements like a persistent banner ad (you can create a custom provider, e.g. `AdBannerMarginsProvider`, that reports the banner height).
+6. (optional) Use one of the Preview Modes while in editor to preview the adjustments.
+    Preview is applied on Play Mode and while hovering the `Hover to Preview Layout` button in the `SafeAreaLayoutGroup`'s inspector.
+7. Play the game
+8. Enjoy 🍾

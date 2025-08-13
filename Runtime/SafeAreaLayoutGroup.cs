@@ -1,18 +1,14 @@
 using System;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.Serialization;
 using UnityEngine.UI;
 
 namespace Gilzoide.SafeAreaLayout
 {
-    public interface ICustomSafeAreaProvider{}
-    
     [RequireComponent(typeof(RectTransform)), ExecuteAlways]
     public class SafeAreaLayoutGroup : MonoBehaviour, ILayoutGroup
     {
-        public bool IsDrivingLayout => (Application.isPlaying || PreviewInEditor)
-            && _canvas != null && _canvas.renderMode != RenderMode.WorldSpace;
-
 #if UNITY_EDITOR
         public static bool PreviewInEditor = false;
 #else
@@ -20,34 +16,52 @@ namespace Gilzoide.SafeAreaLayout
 #endif
 
         [SerializeField] private SafeAreaLayoutConfig _overrideGlobalLayoutConfig;
-
-        public RectTransform SelfRectTransform => (RectTransform) transform;
-
-        protected readonly Dictionary<RectTransform, Anchors> _childrenAnchors = new Dictionary<RectTransform, Anchors>();
-        protected DrivenRectTransformTracker _drivenRectTransformTracker = new DrivenRectTransformTracker();
-        protected readonly Vector3[] _worldCorners = new Vector3[4];
-        protected Canvas _canvas;
-        protected Rect _screenRect;
+        [FormerlySerializedAs("_customMargins")] [FormerlySerializedAs("_marginsProviders")] [SerializeField] private MarginsProviderBase[] _additionalMargins;
+        private readonly Dictionary<RectTransform, Anchors> _childrenAnchors = new();
+        private readonly HashSet<RectTransform> _childrenToUntrack = new();
+        private DrivenRectTransformTracker _drivenRectTransformTracker;
+        private readonly Vector3[] _worldCorners = new Vector3[4];
+        private Canvas _canvas;
+        private RectTransform _canvasRectTransform;
+        private Rect _screenRect;
         private SafeAreaLayoutConfig _layoutConfig;
+        
+        private bool IsDrivingLayout => (Application.isPlaying || PreviewInEditor)
+                                       && _canvas != null && _canvas.renderMode != RenderMode.WorldSpace;
+        
+        public RectTransform RectTransform => (RectTransform)transform;
 
         private void Awake()
         {
-            _layoutConfig = _overrideGlobalLayoutConfig == null ? SafeAreaLayoutProjectConfigProvider.Config : _overrideGlobalLayoutConfig; 
+            _layoutConfig = _overrideGlobalLayoutConfig == null ? SafeAreaLayoutProjectConfigProvider.Config : _overrideGlobalLayoutConfig;
+            if (_additionalMargins != null)
+            {
+                foreach (MarginsProviderBase marginsProvider in _additionalMargins)
+                {
+                    if (marginsProvider == null)
+                    {
+                        continue;
+                    }
+                    marginsProvider.SetLayoutGroup(this);
+                }
+            }
         }
 
-        protected virtual void OnEnable()
+        private void OnEnable()
         {
-            _canvas = FindRootCanvas();
-            RefreshChildrenAnchors();
+            if (_canvas == null)
+            {
+                RefreshCanvas();
+            }
         }
 
-        protected virtual void OnDisable()
+        private void OnDisable()
         {
             _canvas = null;
             ClearChildrenAnchors();
         }
 
-        protected virtual void OnTransformChildrenChanged()
+        private void OnTransformChildrenChanged()
         {
             if (isActiveAndEnabled)
             {
@@ -55,16 +69,26 @@ namespace Gilzoide.SafeAreaLayout
             }
         }
 
-        protected virtual void OnTransformParentChanged()
+        private void OnTransformParentChanged()
         {
             if (isActiveAndEnabled)
             {
-                _canvas = FindRootCanvas();
-                RefreshChildrenAnchors();
+               RefreshCanvas();
+            }
+            else
+            {
+                _canvas = null;
             }
         }
 
-        public virtual void SetLayoutHorizontal()
+        private void RefreshCanvas()
+        {
+            _canvas = FindRootCanvas();
+            _canvasRectTransform = _canvas == null ? null : _canvas.GetComponent<RectTransform>();
+            RefreshChildrenAnchors();
+        }
+
+        public void SetLayoutHorizontal()
         {
             if (!IsDrivingLayout)
             {
@@ -78,17 +102,30 @@ namespace Gilzoide.SafeAreaLayout
                 return;
             }
 
-            Rect safeArea = GetSafeArea();
-            float leftMargin = _layoutConfig.LeftMargin * Mathf.Max(0, safeArea.xMin - _screenRect.xMin) / horizontalSize;
-            float rightMargin = _layoutConfig.RightMargin * Mathf.Max(0, _screenRect.xMax - safeArea.xMax) / horizontalSize;
+            Rect safeArea = SafeAreaUtility.GetSafeArea();
+            float leftMargin = _layoutConfig.LeftMargin * Mathf.Max(0, safeArea.xMin - _screenRect.xMin);
+            float rightMargin = _layoutConfig.RightMargin * Mathf.Max(0, _screenRect.xMax - safeArea.xMax);
+            
+            if (_additionalMargins != null)
+            {
+                foreach (var marginsProvider in _additionalMargins)
+                {
+                    if (marginsProvider == null)
+                    {
+                        continue;
+                    }
+                    leftMargin = Mathf.Max(leftMargin, marginsProvider.LeftMargin);
+                    rightMargin = Mathf.Max(rightMargin, marginsProvider.RightMargin);
+                }
+            }
 
             foreach ((RectTransform child, Anchors anchors) in _childrenAnchors)
             {
-                anchors.WithHorizontalMargins(leftMargin, rightMargin).ApplyTo(child);
+                anchors.WithHorizontalMargins(leftMargin / horizontalSize, rightMargin / horizontalSize).ApplyTo(child);
             }
         }
 
-        public virtual void SetLayoutVertical()
+        public void SetLayoutVertical()
         {
             if (!IsDrivingLayout)
             {
@@ -101,23 +138,38 @@ namespace Gilzoide.SafeAreaLayout
                 return;
             }
 
-            Rect safeArea = GetSafeArea();
-            float bottomMargin = _layoutConfig.BottomMargin * Mathf.Max(0, safeArea.yMin - _screenRect.yMin) / verticalSize;
-            float topMargin = _layoutConfig.TopMargin * Mathf.Max(0, _screenRect.yMax - safeArea.yMax) / verticalSize;
+            Rect safeArea = SafeAreaUtility.GetSafeArea();
+
+            float bottomMargin = _layoutConfig.BottomMargin * Mathf.Max(0, safeArea.yMin - _screenRect.yMin);
+            float topMargin = _layoutConfig.TopMargin * Mathf.Max(0, _screenRect.yMax - safeArea.yMax);
+
+            if (_additionalMargins != null)
+            {
+                foreach (var marginsProvider in _additionalMargins)
+                {
+                    if (marginsProvider == null)
+                    {
+                        continue;
+                    }
+                    bottomMargin = Mathf.Max(bottomMargin, marginsProvider.BottomMargin);
+                    topMargin = Mathf.Max(topMargin, marginsProvider.TopMargin);
+                }
+            }
 
             foreach ((RectTransform child, _) in _childrenAnchors)
             {
-                new Anchors(child).WithVerticalMargins(bottomMargin, topMargin).ApplyTo(child);
+                new Anchors(child).WithVerticalMargins(bottomMargin / verticalSize, topMargin / verticalSize).ApplyTo(child);
             }
         }
 
-        public void ClearChildrenAnchors()
+        private void ClearChildrenAnchors()
         {
             _drivenRectTransformTracker.Clear();
             foreach ((RectTransform child, Anchors anchors) in _childrenAnchors)
             {
                 anchors.ApplyTo(child);
             }
+
             _childrenAnchors.Clear();
         }
 
@@ -130,7 +182,13 @@ namespace Gilzoide.SafeAreaLayout
             }
 
             _drivenRectTransformTracker.Clear();
-            var childrenToUntrack = new HashSet<RectTransform>(_childrenAnchors.Keys);
+            _childrenToUntrack.Clear();
+            
+            foreach (var children in _childrenAnchors)
+            {
+                _childrenToUntrack.Add(children.Key);
+            }
+            
             foreach (Transform child in transform)
             {
                 if (!(child is RectTransform rectTransform)
@@ -144,47 +202,55 @@ namespace Gilzoide.SafeAreaLayout
                 {
                     _childrenAnchors[rectTransform] = new Anchors(rectTransform);
                 }
-                childrenToUntrack.Remove(rectTransform);
+
+                _childrenToUntrack.Remove(rectTransform);
             }
 
-            foreach (RectTransform previousChild in childrenToUntrack)
+            foreach (RectTransform previousChild in _childrenToUntrack)
             {
                 _childrenAnchors.Remove(previousChild);
             }
-            
-            LayoutRebuilder.MarkLayoutForRebuild(SelfRectTransform);
+
+            LayoutRebuilder.MarkLayoutForRebuild(RectTransform);
         }
 
-        protected virtual Rect GetSafeArea()
+        private void RefreshScreenRect()
         {
-            return SafeAreaUtility.GetSafeArea();
-        }
-
-        protected void RefreshScreenRect()
-        {
-            SelfRectTransform.GetWorldCorners(_worldCorners);
+            RectTransform.GetWorldCorners(_worldCorners);
 
             Vector3 bottomLeft = _worldCorners[0];
             Vector3 topRight = _worldCorners[2];
             if (_canvas.renderMode == RenderMode.ScreenSpaceCamera && _canvas.worldCamera != null)
             {
-                Camera camera = _canvas.worldCamera;
-                bottomLeft = camera.WorldToScreenPoint(bottomLeft);
-                topRight = camera.WorldToScreenPoint(topRight);
+                Camera canvasCamera = _canvas.worldCamera;
+                bottomLeft = canvasCamera.WorldToScreenPoint(bottomLeft);
+                topRight = canvasCamera.WorldToScreenPoint(topRight);
             }
+
             _screenRect = Rect.MinMaxRect(bottomLeft.x, bottomLeft.y, topRight.x, topRight.y);
         }
 
-        protected Canvas FindRootCanvas()
+        public float ConvertToPixels(float uiUnits)
+        {
+            if (!IsDrivingLayout)
+            {
+                return uiUnits;
+            }
+
+            float pixelsScaleFactor = Screen.height / _canvasRectTransform.rect.height;
+            return uiUnits * pixelsScaleFactor;
+        }
+
+        private Canvas FindRootCanvas()
         {
             Canvas canvas = GetComponentInParent<Canvas>();
             return canvas != null ? canvas.rootCanvas : null;
         }
 
 #if UNITY_EDITOR
-        protected virtual void OnValidate()
+        private void OnValidate()
         {
-            LayoutRebuilder.MarkLayoutForRebuild(SelfRectTransform);
+            LayoutRebuilder.MarkLayoutForRebuild(RectTransform);
         }
 #endif
     }
