@@ -16,9 +16,9 @@ It drives direct children's anchors while in Play Mode and supports [`LayoutElem
   All Preview Modes support both portrait and landscape resolutions.
   `Screen.safeArea` Preview Mode is only applied when using Unity's [Device Simulator](https://docs.unity3d.com/Manual/device-simulator-introduction.html) (in Unity 2020 and older, available as an [UPM package](https://docs.unity3d.com/Packages/com.unity.device-simulator@latest/index.html))
 - Only affects canvases in either `Screen Space - Overlay` or `Screen Space - Camera` modes, so `World Space` canvases are ignored
-- Customize the safe area rectangle by creating a subclass of `SafeAreaLayoutGroup` and overriding the `GetSafeArea()` method.
-  This is useful to provide additional spacing to the safe area, for example space occupied by banner ads.
-
+- Project-wide margin multipliers configurable in Project Settings at `Edit → Project Settings → Safe Area Layout`
+- Per-group override support by assigning a custom `SafeAreaLayoutConfig` to a `SafeAreaLayoutGroup`'s `OverrideGloblalLayoutConfig` field
+- Extensible additional margins via Margins Providers: plug in components deriving from `MarginsProviderBase` in the `Additional Margins` list to reserve extra space (e.g., banner ads)
 
 ## Installing
 
